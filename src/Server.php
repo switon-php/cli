@@ -10,6 +10,7 @@ use Switon\Cli\Event\CommandExecuted;
 use Switon\Cli\Event\CommandExecuting;
 use Switon\Cli\Exception\OptionsException;
 use Switon\Core\Attribute\Autowired;
+use Switon\Core\ClockInterface;
 use Switon\Core\Runtime;
 use Switon\Core\StopFlow;
 use Swoole\Coroutine;
@@ -40,6 +41,7 @@ use function implode;
 class Server implements ServerInterface
 {
     #[Autowired] protected EventDispatcherInterface $eventDispatcher;
+    #[Autowired] protected ClockInterface $clock;
     #[Autowired] protected ErrorHandlerInterface $errorHandler;
     #[Autowired] protected HandlerInterface $handler;
 
@@ -53,7 +55,7 @@ class Server implements ServerInterface
     {
         $args = implode(' ', array_slice($GLOBALS['argv'], 1));
         $command = basename($GLOBALS['argv'][0]);
-        $start = microtime(true);
+        $startedAt = $this->clock->microtime();
 
         $this->eventDispatcher->dispatch(new CommandExecuting($this, $command, $args));
 
@@ -68,7 +70,7 @@ class Server implements ServerInterface
             $this->exit_code = self::EXIT_SYSTEM_ERROR;
             $this->errorHandler->handle($throwable);
         } finally {
-            $elapsed = round(microtime(true) - $start, 3);
+            $elapsed = $this->clock->elapsed($startedAt);
             $this->eventDispatcher->dispatch(new CommandExecuted($this, $command, $args, $elapsed));
         }
     }
