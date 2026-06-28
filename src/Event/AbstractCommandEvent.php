@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Switon\Cli\Event;
 
 use Stringable;
+use Switon\Core\ConsoleInterface;
+use Switon\Core\SenderAwareInterface;
 use Switon\Core\Json;
 
 use function array_slice;
@@ -32,19 +34,23 @@ use function strtr;
  * @see \Switon\Cli\Event\CliInvoking
  * @see \Switon\Cli\Event\CliInvoked
  */
-abstract class AbstractCommandEvent
+abstract class AbstractCommandEvent implements SenderAwareInterface
 {
+    public ConsoleInterface $sender;
+
     /**
      * Creates an event and computes formatted message immediately.
      *
      * @param array<string, mixed> $context
      */
     public function __construct(
+        ConsoleInterface $sender,
         string|Stringable $message,
         array             $context = [],
         string            $command = '',
         string            $args = '',
     ) {
+        $this->sender = $sender;
         $this->message = (string)$message;
         $this->context = $context;
         $this->formatted = $this->formatMessage($this->message, $this->context);
@@ -62,6 +68,11 @@ abstract class AbstractCommandEvent
     public string $command;
     /** Command arguments string. */
     public string $args;
+
+    public function getSender(): ConsoleInterface
+    {
+        return $this->sender;
+    }
 
     /** Reads entrypoint command from globals. */
     protected function getCommandFromGlobals(): string

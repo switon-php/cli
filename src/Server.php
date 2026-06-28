@@ -55,7 +55,7 @@ class Server implements ServerInterface
         $command = basename($GLOBALS['argv'][0]);
         $start = microtime(true);
 
-        $this->eventDispatcher->dispatch(new CommandExecuting($command, $args));
+        $this->eventDispatcher->dispatch(new CommandExecuting($this, $command, $args));
 
         try {
             $this->exit_code = $this->handler->handle($GLOBALS['argv']);
@@ -69,7 +69,7 @@ class Server implements ServerInterface
             $this->errorHandler->handle($throwable);
         } finally {
             $elapsed = round(microtime(true) - $start, 3);
-            $this->eventDispatcher->dispatch(new CommandExecuted($command, $args, $elapsed));
+            $this->eventDispatcher->dispatch(new CommandExecuted($this, $command, $args, $elapsed));
         }
     }
 

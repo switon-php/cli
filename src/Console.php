@@ -253,7 +253,7 @@ class Console implements ConsoleInterface
      */
     public function debug(string|Stringable $message = '', array $context = [], int $options = 0): void
     {
-        $this->eventDispatcher->dispatch(new ConsoleDebug($message, $context));
+        $this->eventDispatcher->dispatch(new ConsoleDebug($this, $message, $context));
         $this->writeLn($message, $context, $options);
     }
 
@@ -264,7 +264,7 @@ class Console implements ConsoleInterface
      */
     public function info(string|Stringable $message, array $context = []): void
     {
-        $this->eventDispatcher->dispatch(new ConsoleInfo($message, $context));
+        $this->eventDispatcher->dispatch(new ConsoleInfo($this, $message, $context));
         $this->writeLn($message, $context, Colors::FC_LIGHT_BLUE);
     }
 
@@ -275,7 +275,7 @@ class Console implements ConsoleInterface
      */
     public function warning(string|Stringable $message, array $context = []): void
     {
-        $this->eventDispatcher->dispatch(new ConsoleWarning($message, $context));
+        $this->eventDispatcher->dispatch(new ConsoleWarning($this, $message, $context));
         $this->writeLn($message, $context, Colors::FC_LIGHT_YELLOW | Colors::AT_BOLD);
     }
 
@@ -286,14 +286,14 @@ class Console implements ConsoleInterface
      */
     public function success(string|Stringable $message, array $context = []): void
     {
-        $this->eventDispatcher->dispatch(new ConsoleInfo($message, $context));
+        $this->eventDispatcher->dispatch(new ConsoleInfo($this, $message, $context));
         $this->writeLn($message, $context, Colors::FC_LIGHT_GREEN);
     }
 
     /** {@inheritDoc} */
     public function error(string|Stringable $message, array $context = [], int $code = 1): int
     {
-        $this->eventDispatcher->dispatch(new ConsoleError($message, $context));
+        $this->eventDispatcher->dispatch(new ConsoleError($this, $message, $context));
         $this->writeLn($message, $context, Colors::FC_LIGHT_RED | Colors::AT_BOLD);
 
         return $code;

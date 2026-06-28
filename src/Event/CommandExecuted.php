@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Switon\Cli\Event;
 
+use Switon\Core\SenderAwareInterface;
 use Switon\Eventing\Attribute\EventLevel;
 use Switon\Eventing\Severity;
+use Switon\Cli\ServerInterface;
 
 /**
  * CLI command execution completed event.
@@ -17,13 +19,19 @@ use Switon\Eventing\Severity;
  * @see \Switon\Cli\Event\CommandExecuting
  */
 #[EventLevel(Severity::INFO)]
-class CommandExecuted
+class CommandExecuted implements SenderAwareInterface
 {
     /** @param float $elapsed Command execution time in seconds. */
     public function __construct(
+        public ServerInterface $sender,
         public string $command,
         public string $args,
         public float  $elapsed,
     ) {
+    }
+
+    public function getSender(): ServerInterface
+    {
+        return $this->sender;
     }
 }

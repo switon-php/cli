@@ -156,11 +156,11 @@ class Handler implements HandlerInterface
         $this->prepareOptionAliases($rMethod);
 
         // Outer layer: generic CLI invoking
-        $this->eventDispatcher->dispatch(new CliInvoking($this->router, $instance, $method, $action));
+        $this->eventDispatcher->dispatch(new CliInvoking($this, $this->router, $instance, $method, $action));
 
         // Inner layer: only when method is marked with #[Tool]
         if ($isTool) {
-            $this->eventDispatcher->dispatch(new ToolInvoking($args, $this->router, $instance, $method, $action));
+            $this->eventDispatcher->dispatch(new ToolInvoking($this, $args, $this->router, $instance, $method, $action));
         }
 
         try {
@@ -175,11 +175,11 @@ class Handler implements HandlerInterface
 
         // Inner layer: tool completed
         if ($isTool) {
-            $this->eventDispatcher->dispatch(new ToolInvoked($args, $this->router, $instance, $method, $action, $return));
+            $this->eventDispatcher->dispatch(new ToolInvoked($this, $args, $this->router, $instance, $method, $action, $return));
         }
 
         // Outer layer: generic CLI completed
-        $this->eventDispatcher->dispatch(new CliInvoked($this->router, $instance, $method, $action, $return));
+        $this->eventDispatcher->dispatch(new CliInvoked($this, $this->router, $instance, $method, $action, $return));
 
         if ($return === null) {
             return 0;

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Switon\Cli\Event;
 
+use Switon\Cli\HandlerInterface;
 use Switon\Cli\RouterInterface;
+use Switon\Core\SenderAwareInterface;
 use Switon\Eventing\Attribute\EventLevel;
 use Switon\Eventing\Severity;
 
@@ -19,10 +21,11 @@ use Switon\Eventing\Severity;
  * @see \Switon\Cli\Event\ToolInvoked
  */
 #[EventLevel(Severity::INFO)]
-class ToolInvoking
+class ToolInvoking implements SenderAwareInterface
 {
     /** @param object $command Tool command instance being invoked. */
     public function __construct(
+        public HandlerInterface $sender,
         /** @var list<string> Raw argv (including entrypoint). */
         public array           $argv,
         public RouterInterface $router,
@@ -30,5 +33,10 @@ class ToolInvoking
         public string          $method,
         public string          $action,
     ) {
+    }
+
+    public function getSender(): HandlerInterface
+    {
+        return $this->sender;
     }
 }
