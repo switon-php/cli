@@ -9,6 +9,7 @@ use JsonSerializable;
 use ReflectionParameter;
 use Stringable;
 use Switon\Command\Attribute\ShortOption;
+use Switon\Core\Attributes;
 use Switon\Core\Json;
 use Switon\Core\Naming;
 
@@ -115,10 +116,10 @@ class Options implements OptionsInterface, JsonSerializable, Stringable
                 continue;
             }
 
-            $attrs = $parameter->getAttributes(ShortOption::class);
-            $isExplicit = $attrs !== [];
-            $letter = $isExplicit
-                ? $attrs[0]->newInstance()->letter
+            $shortOption = Attributes::first($parameter, ShortOption::class);
+            $isExplicit = $shortOption !== null;
+            $letter = $shortOption !== null
+                ? $shortOption->letter
                 : $parameter->getName()[0];
             $grouped[$letter][] = [
                 'key' => $key,

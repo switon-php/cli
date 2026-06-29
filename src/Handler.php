@@ -19,6 +19,7 @@ use Switon\Command\Attribute\Tool;
 use Switon\Command\CommandDiscoveryInterface;
 use Switon\Core\Attribute\Autowired;
 use Switon\Core\Attribute\Scene;
+use Switon\Core\Attributes;
 use Switon\Core\ConsoleInterface;
 use Switon\Core\Naming;
 use Switon\Core\SceneManagerInterface;
@@ -107,14 +108,11 @@ class Handler implements HandlerInterface
      */
     protected function resolveCommandScene(string $commandClass): ?string
     {
-        $attributes = (new ReflectionClass($commandClass))->getAttributes(Scene::class);
-
-        if ($attributes === []) {
+        $scene = Attributes::first(new ReflectionClass($commandClass), Scene::class);
+        if ($scene === null) {
             return null;
         }
 
-        /** @var Scene $scene */
-        $scene = $attributes[0]->newInstance();
         return $scene->name !== '' ? $scene->name : null;
     }
 
@@ -152,7 +150,7 @@ class Handler implements HandlerInterface
         }
 
         $rMethod = new ReflectionMethod($instance, $method);
-        $isTool = !empty($rMethod->getAttributes(Tool::class));
+        $isTool = Attributes::has($rMethod, Tool::class);
         $this->prepareOptionAliases($rMethod);
 
         // Outer layer: generic CLI invoking
