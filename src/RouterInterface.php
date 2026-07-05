@@ -25,9 +25,9 @@ interface RouterInterface
      *
      * @param array<string> $args
      *
-     * @return self
+     * @return static
      */
-    public function parse(array $args): self;
+    public function parse(array $args): static;
 
     /**
      * Returns entrypoint script name.

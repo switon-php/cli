@@ -27,7 +27,6 @@ use Switon\Core\ConsoleInterface;
 class HelpCommand
 {
     #[Autowired] protected ConsoleInterface $console;
-
     #[Autowired] protected CommandHelpRendererInterface $renderer;
 
     /**

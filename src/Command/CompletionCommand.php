@@ -30,7 +30,6 @@ use function explode;
 use function getenv;
 use function implode;
 use function in_array;
-use function is_dir;
 use function is_writable;
 use function method_exists;
 use function preg_match;
@@ -1181,7 +1180,7 @@ BASH;
     protected function isWritableTargetPath(string $file): bool
     {
         $dir = dirname($file);
-        while ($dir !== '' && $dir !== '/' && !is_dir($dir)) {
+        while ($dir !== '' && $dir !== '/' && !$this->filesystem->isDir($dir)) {
             $parent = dirname($dir);
             if ($parent === $dir) {
                 break;

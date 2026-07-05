@@ -21,9 +21,7 @@ use Throwable;
 class ErrorHandler implements ErrorHandlerInterface
 {
     #[Autowired] protected LoggerInterface $logger;
-
     #[Autowired] protected ConsoleInterface $console;
-
     #[Autowired] protected InputInterface $input;
 
     /** {@inheritDoc} */

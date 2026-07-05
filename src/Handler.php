@@ -8,7 +8,6 @@ use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use ReflectionClass;
 use ReflectionMethod;
-use ReflectionNamedType;
 use Switon\Binding\ArgumentsBinderInterface;
 use Switon\Cli\Event\CliInvoked;
 use Switon\Cli\Event\CliInvoking;
@@ -17,6 +16,7 @@ use Switon\Cli\Event\ToolInvoking;
 use Switon\Cli\Exception\OptionsException;
 use Switon\Command\Attribute\Tool;
 use Switon\Command\CommandDiscoveryInterface;
+use Switon\Command\CommandInspector;
 use Switon\Core\Attribute\Autowired;
 use Switon\Core\Attribute\Scene;
 use Switon\Core\Attributes;
@@ -91,8 +91,7 @@ class Handler implements HandlerInterface
     {
         $scalarParameters = [];
         foreach ($rMethod->getParameters() as $parameter) {
-            $type = $parameter->getType();
-            if (!$type instanceof ReflectionNamedType || !$type->isBuiltin()) {
+            if (!CommandInspector::isOptionType($parameter->getType())) {
                 continue;
             }
             $scalarParameters[$parameter->getName()] = $parameter;

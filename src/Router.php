@@ -43,7 +43,7 @@ class Router implements RouterInterface
     /**
      * {@inheritDoc}
      */
-    public function parse(array $args): RouterInterface
+    public function parse(array $args): static
     {
         $this->entrypoint = array_shift($args) ?? '';
 

@@ -16,7 +16,7 @@ use Switon\Core\ConsoleInterface;
 use Switon\Core\Json;
 use Switon\Core\Naming;
 use ReflectionClass;
-use ReflectionNamedType;
+use Switon\Command\CommandInspector;
 
 use function array_flip;
 use function count;
@@ -169,9 +169,7 @@ class CommandHelpRenderer implements CommandHelpRendererInterface
                 $defaultValues[$name] = $rParameter->getDefaultValue();
             }
 
-            if (($rType = $rParameter->getType()) === null) {
-                $options[$name] = '';
-            } elseif ($rType instanceof ReflectionNamedType && $rType->isBuiltin()) {
+            if (CommandInspector::isOptionType($rParameter->getType())) {
                 $options[$name] = '';
             }
         }
