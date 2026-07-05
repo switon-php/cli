@@ -114,6 +114,18 @@ class CompletionCommandInstallTest extends TestCase
         $this->assertSame(0, $code);
         $this->assertTrue($cmd->clearedZcompdump, 'installZshAction should clear zcompdump best-effort');
     }
+
+    public function testWritableCheckWalksUpToAnExistingDirectory(): void
+    {
+        $filesystem = $this->createStub(FilesystemInterface::class);
+        $filesystem->method('isDir')->willReturnCallback(
+            static fn (string $dir): bool => $dir === dirname(sys_get_temp_dir()) || $dir === sys_get_temp_dir()
+        );
+        $command = new TestableCompletionCommandInstall();
+        $command->setFilesystem($filesystem);
+
+        $this->assertTrue($command->exposeWritable(sys_get_temp_dir() . '/missing-switon-dir/file'));
+    }
 }
 
 class TestableCompletionCommandInstall extends CompletionCommand
@@ -158,6 +170,11 @@ class TestableCompletionCommandInstall extends CompletionCommand
     protected function isWritableTargetPath(string $file): bool
     {
         return $this->forceWritable;
+    }
+
+    public function exposeWritable(string $file): bool
+    {
+        return parent::isWritableTargetPath($file);
     }
 
     protected function bestEffortClearZcompdump(): void

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Switon\Cli\Tests\Unit;
 
 use Switon\Cli\Router;
-use Switon\Cli\Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test cases for Router class.
@@ -18,7 +18,6 @@ class RouterTest extends TestCase
 
     protected function setUp(): void
     {
-        parent::setUp();
         $this->router = new Router();
     }
 

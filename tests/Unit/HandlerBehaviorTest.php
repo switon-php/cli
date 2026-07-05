@@ -381,6 +381,27 @@ class HandlerBehaviorTest extends TestCase
         $this->assertSame(0, $code);
     }
 
+    public function testHandlePassesOnlyScalarParametersToOptionNormalization(): void
+    {
+        $args = ['cli.php', 'mixed:run', '--name', 'alpha'];
+        $this->prepareRoute('mixed', 'run', ['--name', 'alpha']);
+
+        $instance = new DummyMixedParamsCommand();
+        $this->discovery->method('discover')->willReturn(['mixed' => DummyMixedParamsCommand::class]);
+        $this->psrContainer->method('get')->with(DummyMixedParamsCommand::class)->willReturn($instance);
+        $this->invoker->method('invoke')->willReturn(0);
+        $this->dispatcher->method('dispatch')->willReturnCallback(static fn (object $event): object => $event);
+
+        $this->options->expects($this->once())
+            ->method('normalize')
+            ->with($this->callback(static function (array $parameters): bool {
+                return array_keys($parameters) === ['name']
+                    && !isset($parameters['service']);
+            }));
+
+        $this->handler->handle($args);
+    }
+
     public function testHandleDoesNotSetSceneWhenSceneAttributeNameIsEmpty(): void
     {
         $args = ['cli.php', 'emptyscene:run'];
@@ -406,7 +427,7 @@ class HandlerBehaviorTest extends TestCase
         $this->assertSame(0, $code);
     }
 
-    private function prepareRoute(string $command, string $action, array $params): void
+    protected function prepareRoute(string $command, string $action, array $params): void
     {
         $this->router->expects($this->once())->method('parse');
         $this->router->expects($this->once())->method('getParams')->willReturn($params);
@@ -471,4 +492,16 @@ class DummyEmptySceneCommand
     public function runAction(): void
     {
     }
+}
+
+class DummyMixedParamsCommand
+{
+    public function runAction(string $name, DummyCliService $service): int
+    {
+        return 0;
+    }
+}
+
+class DummyCliService
+{
 }

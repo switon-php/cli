@@ -130,6 +130,54 @@ class CommandHelpRendererTest extends TestCase
         $this->assertSame(0, $code);
     }
 
+    public function testRenderActionHelpPrintsMethodNameWhenDescriptionMissing(): void
+    {
+        $lines = [];
+        $this->console->method('writeLn')->willReturnCallback(static function (string $line) use (&$lines): void {
+            $lines[] = $line;
+        });
+        $this->commandInspector->method('getMethodDescription')->willReturn('');
+        $this->options->method('normalize')->willReturn([]);
+
+        $renderer = new ExposedCommandHelpRenderer(
+            $this->console,
+            $this->container,
+            $this->commandDiscovery,
+            $this->commandInspector,
+            $this->options
+        );
+
+        $reflection = new ReflectionMethod(DummyNoOptionCommand::class, 'defaultAction');
+        $renderer->exposedRenderActionHelp($reflection, 'defaultAction', false);
+
+        $this->assertStringContainsString('default', implode("\n", $lines));
+    }
+
+    public function testRenderActionHelpIgnoresMalformedAndNonOptionParamDocLines(): void
+    {
+        $lines = [];
+        $this->console->method('writeLn')->willReturnCallback(static function (string $line) use (&$lines): void {
+            $lines[] = $line;
+        });
+        $this->commandInspector->method('getMethodDescription')->willReturn('');
+        $this->options->method('normalize')->willReturn(['v' => 'verbose']);
+
+        $renderer = new ExposedCommandHelpRenderer(
+            $this->console,
+            $this->container,
+            $this->commandDiscovery,
+            $this->commandInspector,
+            $this->options
+        );
+
+        $reflection = new ReflectionMethod(DummyParamDocNoiseCommand::class, 'noisyAction');
+        $renderer->exposedRenderActionHelp($reflection, 'noisyAction', true);
+
+        $out = implode("\n", $lines);
+        $this->assertStringContainsString('--verbose', $out);
+        $this->assertStringNotContainsString('database', $out);
+    }
+
     public function testRenderActionHelpPrintsActionNameAndTypedDefaults(): void
     {
         $lines = [];
@@ -190,6 +238,18 @@ class DummySingleActionCommand
 class DummyNoOptionCommand
 {
     public function defaultAction(DateTimeImmutable $dt): void
+    {
+    }
+}
+
+class DummyParamDocNoiseCommand
+{
+    /**
+     * @param bool
+     * @param bool $verbose Enable verbose output.
+     * @param string $database Not an option parameter.
+     */
+    public function noisyAction(bool $verbose = false): void
     {
     }
 }

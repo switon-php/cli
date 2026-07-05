@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Switon\Cli\Tests\Unit;
 
 use Switon\Cli\Options;
-use Switon\Cli\Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 use ReflectionParameter;
 
@@ -20,7 +20,6 @@ class OptionsTest extends TestCase
 
     protected function setUp(): void
     {
-        parent::setUp();
         $this->options = new Options();
     }
 
@@ -1080,6 +1079,16 @@ class OptionsTest extends TestCase
         $this->assertSame('alice', $this->options->get('first'));
         $this->assertNull($this->options->get('second'));
         $this->assertFalse($this->options->has('x'));
+    }
+
+    public function testNormalizeSkipsNonReflectionParameterEntries(): void
+    {
+        $parameters = $this->getNormalizeParameters('toggleVerboseAction');
+        $parameters['junk'] = 'not-a-parameter';
+
+        $map = $this->options->normalize($parameters);
+
+        $this->assertSame(['v' => 'verbose'], $map);
     }
 
     /**

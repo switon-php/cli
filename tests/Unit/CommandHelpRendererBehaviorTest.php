@@ -96,6 +96,40 @@ class CommandHelpRendererBehaviorTest extends TestCase
         $this->assertTrue($fixture->defaultHelpCalled);
     }
 
+    public function testRenderFiltersActionsWhenActionArgumentProvided(): void
+    {
+        $lines = [];
+        $console = $this->createMock(ConsoleInterface::class);
+        $console->method('colorize')->willReturnCallback(static fn (string $s): string => $s);
+        $console->method('writeLn')->willReturnCallback(static function (string $line) use (&$lines): void {
+            $lines[] = $line;
+        });
+        $console->method('error')->willReturn(1);
+
+        $container = $this->createMock(ContainerInterface::class);
+        $container->method('get')->willReturn(new HelpRendererFixtureCommand());
+
+        $discovery = $this->createMock(CommandDiscoveryInterface::class);
+        $discovery->method('discover')->willReturn(['fixture' => HelpRendererFixtureCommand::class]);
+
+        $inspector = $this->createMock(CommandInspectorInterface::class);
+        $inspector->method('getCommandDescription')->willReturn('');
+        $inspector->method('getMethodDescription')->willReturn('Run second only');
+        $inspector->method('hasOptions')->willReturn(false);
+
+        $options = $this->createMock(OptionsInterface::class);
+        $options->method('normalize')->willReturn([]);
+
+        $renderer = new CommandHelpRenderer($console, $container, $discovery, $inspector, $options);
+
+        $code = $renderer->render('fixture', 'second');
+
+        $this->assertSame(0, $code);
+        $out = implode("\n", $lines);
+        $this->assertStringContainsString('fixture:second', $out);
+        $this->assertStringNotContainsString('fixture:default', $out);
+    }
+
     public function testRenderKeepsKebabCaseCommandNamesAndKebabizesActions(): void
     {
         $lines = [];

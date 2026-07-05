@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Switon\Cli\Tests\Unit;
 
+use DateTimeImmutable;
 use ReflectionMethod;
+use stdClass;
 use Switon\Cli\Command\ListCommand;
 use Switon\Cli\Tests\TestCase;
 use Switon\Command\Attribute\Tool;
 use Switon\Command\CommandDiscoveryInterface;
 use Switon\Command\CommandInspector;
-use DateTimeImmutable;
 
 /**
  * Test cases for CommandInspector class.
@@ -297,6 +298,19 @@ class CommandInspectorTest extends TestCase
         $doc = $this->inspector->getActionAiDoc(CommandInspectorToolFixture::class, 'emptyTool');
         $this->assertNull($doc);
     }
+
+    public function testGetOptionsSupportsBuiltinUnionsAndRejectsClassUnions(): void
+    {
+        $builtinUnion = new ReflectionMethod(CommandInspectorUnionFixture::class, 'builtinAction');
+        $options = $this->inspector->getOptions($builtinUnion);
+
+        $this->assertTrue($this->inspector->hasOptions($builtinUnion));
+        $this->assertSame('string|int', $options['value']['type']);
+
+        $classUnion = new ReflectionMethod(CommandInspectorUnionFixture::class, 'classAction');
+        $this->assertFalse($this->inspector->hasOptions($classUnion));
+        $this->assertSame([], $this->inspector->getOptions($classUnion));
+    }
 }
 
 class CommandInspectorToolFixture
@@ -373,6 +387,17 @@ class CommandInspectorObjectDocFixture
      * @param string $name Name to print.
      */
     public function defaultAction(DateTimeImmutable $date, string $name = 'x'): void
+    {
+    }
+}
+
+class CommandInspectorUnionFixture
+{
+    public function builtinAction(string|int $value): void
+    {
+    }
+
+    public function classAction(DateTimeImmutable|stdClass $value): void
     {
     }
 }

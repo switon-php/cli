@@ -235,6 +235,36 @@ class ListCommandTest extends TestCase
         $this->assertStringContainsString('solo', $output);
     }
 
+    public function testDefaultActionOmitsTableWhenShouldOmitFromListFiltersEveryCommand(): void
+    {
+        $this->console->method('colorize')->willReturnCallback(static fn (string $text): string => $text);
+
+        $this->commandDiscovery->method('discover')->willReturn([
+            'tool-only' => DummyToolOnlyCommand::class,
+        ]);
+        $this->commandInspector->method('isHiddenCommand')->willReturn(false);
+        $this->commandInspector->method('getActions')
+            ->willReturnCallback(static function (string $class, bool $includeHidden = false): array {
+                if ($class === DummyToolOnlyCommand::class) {
+                    return $includeHidden ? ['hiddenAction' => 'internal'] : [];
+                }
+
+                return [];
+            });
+
+        $lines = [];
+        $this->console->method('writeLn')->willReturnCallback(static function (string $line = '') use (&$lines): void {
+            $lines[] = $line;
+        });
+
+        $code = $this->command->defaultAction(false, false);
+
+        $this->assertSame(0, $code);
+        $output = implode("\n", $lines);
+        $this->assertStringContainsString('Available commands:', $output);
+        $this->assertStringNotContainsString('tool-only', $output);
+    }
+
     public function testDefaultActionRendersSingleRowWhenCommandHasNoSubcommands(): void
     {
         $this->console->method('colorize')->willReturnCallback(static fn (string $text): string => $text);
@@ -288,14 +318,14 @@ class ListCommandAppFixture
     }
 }
 
-final class ListCommandSoloAppFixture
+class ListCommandSoloAppFixture
 {
     public function defaultAction(): void
     {
     }
 }
 
-final class ListCommandNakedFixture
+class ListCommandNakedFixture
 {
     public function defaultAction(): void
     {
