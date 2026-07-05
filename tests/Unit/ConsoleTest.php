@@ -481,6 +481,15 @@ class ConsoleTest extends TestCase
         $this->assertFalse($console->isSupportColor());
     }
 
+    public function testColorizePadsTextWhenColorDisabledAndWidthRequested(): void
+    {
+        $console = new TestableConsole(['NO_COLOR' => '1'], true, true);
+
+        $result = $console->colorize('ab', 0, 6);
+
+        $this->assertSame('ab    ', $result);
+    }
+
     public function testIsSupportColorReturnsFalseWhenOutputIsNotTty(): void
     {
         $console = new TestableConsole([], false, true);
@@ -493,6 +502,25 @@ class ConsoleTest extends TestCase
         $console = new TestableConsole([], true, true);
 
         $this->assertTrue($console->isSupportColor());
+    }
+
+    public function testIsSupportColorReturnsTrueOnWindowsWhenAnsiconIsSet(): void
+    {
+        $console = new TestableConsole(['ANSICON' => '1'], true, false);
+
+        $this->assertTrue($console->isSupportColor());
+    }
+
+    public function testGetWidthReadsColumnsEnvironmentVariable(): void
+    {
+        putenv('COLUMNS=96');
+        try {
+            $console = new TestableConsole([], true, true);
+
+            $this->assertSame(96, $console->widthForTest());
+        } finally {
+            putenv('COLUMNS');
+        }
     }
 
     public function testProgressWithIntValue(): void
@@ -726,5 +754,10 @@ class TestableConsole extends Console
     protected function isOutputTty(): ?bool
     {
         return $this->tty;
+    }
+
+    public function widthForTest(): int
+    {
+        return $this->getWidth();
     }
 }

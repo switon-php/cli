@@ -9,8 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use RuntimeException;
 use Switon\Cli\Console;
-use Switon\Console\TerminalWidthDetectorInterface;
-use ReflectionClass;
+use Switon\Console\ProgressBarInterface;
 
 #[AllowMockObjectsWithoutExpectations]
 class ConsoleMoreCoverageTest extends TestCase
@@ -180,22 +179,17 @@ class ConsoleMoreCoverageTest extends TestCase
     {
         $c = $this->makeHarness([]);
 
-        $r = new ReflectionClass(Console::class);
-        $m = $r->getMethod('wrapByDisplayWidth');
-
         /** @var list<string> $lines */
-        $lines = $m->invoke($c, 'abcdefghij', 3);
+        $lines = $c->wrapByDisplayWidthForTest('abcdefghij', 3);
         $this->assertGreaterThan(1, count($lines));
     }
 
-    private function makeHarness(array $inputs, int $width = 80): RealConsoleHarness
+    protected function makeHarness(array $inputs, int $width = 80): RealConsoleHarness
     {
         $dispatcher = $this->createMock(EventDispatcherInterface::class);
         $dispatcher->method('dispatch')->willReturnCallback(static fn (object $e): object => $e);
-        $widthDetector = $this->createMock(TerminalWidthDetectorInterface::class);
-        $widthDetector->method('getWidth')->willReturn($width);
 
-        return new RealConsoleHarness($inputs, $dispatcher, $widthDetector);
+        return new RealConsoleHarness($inputs, $dispatcher, $width);
     }
 }
 
@@ -211,16 +205,16 @@ class RealConsoleHarness extends Console
 
     /** @param list<string> $inputs */
     public function __construct(
-        array                           $inputs,
-        ?EventDispatcherInterface       $dispatcher = null,
-        ?TerminalWidthDetectorInterface $widthDetector = null,
+        array                      $inputs,
+        ?EventDispatcherInterface  $dispatcher = null,
+        ?int                       $width = null,
     ) {
         $this->inputs = $inputs;
         if ($dispatcher !== null) {
             $this->eventDispatcher = $dispatcher;
         }
-        if ($widthDetector !== null) {
-            $this->widthDetector = $widthDetector;
+        if ($width !== null) {
+            $this->width = $width;
         }
     }
 
@@ -241,5 +235,13 @@ class RealConsoleHarness extends Console
     protected function runShellCommand(string $command): ?string
     {
         return $this->shellOutputs[$command] ?? '';
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function wrapByDisplayWidthForTest(string $text, int $width): array
+    {
+        return $this->wrapByDisplayWidth($text, $width);
     }
 }

@@ -13,7 +13,6 @@ use Switon\Cli\Event\ConsoleInfo;
 use Switon\Cli\Event\ConsoleWarning;
 use Switon\Console\AnsiWidthCalculator;
 use Switon\Console\Colors;
-use Switon\Console\TerminalWidthDetectorInterface;
 use Switon\Core\Attribute\Autowired;
 use Switon\Core\ConsoleInterface;
 use Switon\Core\Strings;
@@ -26,6 +25,7 @@ use function getenv;
 use function implode;
 use function is_float;
 use function is_int;
+use function is_numeric;
 use function is_string;
 use function max;
 use function sprintf;
@@ -44,7 +44,6 @@ use function trim;
  * console events (<code>ConsoleInfo</code>, <code>ConsoleWarning</code>, etc.).
  *
  * @see \Switon\Cli\Exception
- * @see \Switon\Console\TerminalWidthDetectorInterface
  * @see \Switon\Console\ProgressBarInterface
  * @see \Switon\Cli\Event\ConsoleInfo
  * @see \Switon\Cli\Event\ConsoleError
@@ -55,19 +54,25 @@ class Console implements ConsoleInterface
 
     #[Autowired] protected EventDispatcherInterface $eventDispatcher;
 
-    #[Autowired] protected TerminalWidthDetectorInterface $widthDetector;
+    /** Cached terminal width; 0 means "not detected yet". */
+    protected int $width = 0;
 
-    /** Cached terminal width. */
-    protected ?int $width = null;
-
-    /** Returns cached width or detects it once. */
+    /**
+     * Terminal width in columns.
+     *
+     * Reads `COLUMNS` once and caches it; falls back to 120 when unset or unusable.
+     */
     protected function getWidth(): int
     {
-        if ($this->width === null) {
-            $this->width = $this->widthDetector->getWidth();
+        if ($this->width > 0) {
+            return $this->width;
         }
 
-        return $this->width;
+        $columns = getenv('COLUMNS');
+
+        return $this->width = $columns !== false && is_numeric($columns) && (int)$columns >= 20
+            ? (int)$columns
+            : 120;
     }
 
     /** {@inheritDoc} */
@@ -187,6 +192,10 @@ class Console implements ConsoleInterface
             echo $message;
         } else {
             echo $this->colorize((string)$message, $options);
+        }
+
+        if (function_exists('fflush')) {
+            @fflush(\STDOUT);
         }
 
         if (($v = $context['exception'] ?? null) !== null && $v instanceof Throwable) {
@@ -514,7 +523,12 @@ class Console implements ConsoleInterface
     /** Executes a shell command and returns string output when available. */
     protected function runShellCommand(string $command): ?string
     {
-        $output = shell_exec($command);
+        try {
+            $output = @shell_exec($command);
+        } catch (Throwable) {
+            return null;
+        }
+
         return is_string($output) ? $output : null;
     }
 

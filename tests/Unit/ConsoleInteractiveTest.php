@@ -8,7 +8,6 @@ use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Switon\Cli\Console;
-use Switon\Console\TerminalWidthDetectorInterface;
 use Stringable;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -67,14 +66,12 @@ class ConsoleInteractiveTest extends TestCase
         $this->assertStringContainsString('I this is a very long message', $joined);
     }
 
-    private function injectDeps(TestableInteractiveConsole $c, int $width = 80): void
+    protected function injectDeps(TestableInteractiveConsole $c, int $width = 80): void
     {
         $dispatcher = $this->createMock(EventDispatcherInterface::class);
         $dispatcher->method('dispatch')->willReturnCallback(static fn (object $e): object => $e);
-        $widthDetector = $this->createMock(TerminalWidthDetectorInterface::class);
-        $widthDetector->method('getWidth')->willReturn($width);
 
-        $c->setDependencies($dispatcher, $widthDetector);
+        $c->setDependencies($dispatcher, $width);
     }
 }
 
@@ -98,11 +95,11 @@ class TestableInteractiveConsole extends Console
     }
 
     public function setDependencies(
-        EventDispatcherInterface       $dispatcher,
-        TerminalWidthDetectorInterface $widthDetector,
+        EventDispatcherInterface $dispatcher,
+        int                      $width,
     ): void {
         $this->eventDispatcher = $dispatcher;
-        $this->widthDetector = $widthDetector;
+        $this->width = $width;
     }
 
     public function write(string|Stringable $message, array $context = [], int $options = 0): void
