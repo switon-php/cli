@@ -150,6 +150,24 @@ class ServerTest extends TestCase
         $this->assertSame(33, $server->terminatedWith);
     }
 
+    public function testStartUsesCoroutineSchedulerWhenCoroutineModeEnabled(): void
+    {
+        if (!extension_loaded('swoole')) {
+            self::markTestSkipped('Swoole extension is required');
+        }
+
+        Runtime::setCoroutineEnabled(true);
+        try {
+            $server = new StartCapturingServer();
+            $server->start();
+
+            $this->assertTrue($server->handled);
+            $this->assertSame(33, $server->terminatedWith);
+        } finally {
+            Runtime::setCoroutineEnabled(false);
+        }
+    }
+
     public function testHandleUsesBasenameAndEmptyArgsWhenNoExtraArgv(): void
     {
         $GLOBALS['argv'] = ['/usr/local/bin/switon'];

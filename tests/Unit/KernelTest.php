@@ -106,11 +106,13 @@ class TestableCliKernel extends Kernel
         return $this->services;
     }
 
-    protected function bootstrap(): void
+    public function bootstrap(): \Switon\Di\Container
     {
         if ($this->bootstrapThrowable !== null) {
             throw $this->bootstrapThrowable;
         }
+
+        return new \Switon\Di\Container();
     }
 
     protected function handleStartupException(Throwable $e): void

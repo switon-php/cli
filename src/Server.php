@@ -12,6 +12,7 @@ use Switon\Cli\Exception\OptionsException;
 use Switon\Core\Attribute\Autowired;
 use Switon\Core\ClockInterface;
 use Switon\Core\Runtime;
+use Switon\Sync\TerminationInterface;
 use Switon\Core\StopFlow;
 use Swoole\Coroutine;
 use Swoole\Event;
@@ -44,6 +45,7 @@ class Server implements ServerInterface
     #[Autowired] protected ClockInterface $clock;
     #[Autowired] protected ErrorHandlerInterface $errorHandler;
     #[Autowired] protected HandlerInterface $handler;
+    #[Autowired] protected TerminationInterface $termination;
 
     /** Exit code returned by <code>start()</code>. */
     protected int $exit_code = 0;
@@ -72,6 +74,7 @@ class Server implements ServerInterface
         } finally {
             $elapsed = $this->clock->elapsed($startedAt);
             $this->eventDispatcher->dispatch(new CommandExecuted($this, $command, $args, $elapsed));
+            $this->termination->terminate();
         }
     }
 
