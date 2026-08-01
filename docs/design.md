@@ -5,8 +5,8 @@
 
 - [CLI Package](README.md) — usage, discovery, completion, and operational guidance
 - [FAQ](faq.md#cli-faq) — common questions and troubleshooting
-- [Command Package](../../command/docs/README.md) — discovery metadata and attributes
-- [Console Package](../../console/docs/README.md) — terminal primitives behind the helpers
+- [Command Package](https://github.com/switon-php/command/blob/main/docs/README.md) — discovery metadata and attributes
+- [Console Package](https://github.com/switon-php/console/blob/main/docs/README.md) — terminal primitives behind the helpers
 
 ---
 

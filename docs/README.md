@@ -146,8 +146,9 @@ class ReportCommand
 
 ## Next {#next}
 
-- **To wire a service into the console:** [Add CLI](../../../docs/en/guides/add-cli.md#add-cli)
-- **To run scheduled or cron-style work:** [Schedule Package](../../schedule/docs/README.md)
-- **To bootstrap kernels and config:** [Kernel Package](../../kernel/docs/README.md)
+- **Command discovery and attributes:** [Command Package](https://github.com/switon-php/command/blob/main/docs/README.md)
+- **Terminal primitives behind the helpers:** [Console Package](https://github.com/switon-php/console/blob/main/docs/README.md)
+- **To run scheduled or cron-style work:** [Schedule Package](https://github.com/switon-php/schedule/blob/main/docs/README.md)
+- **To bootstrap kernels and config:** [Kernel Package](https://github.com/switon-php/kernel/blob/main/docs/README.md)
 - **For common questions and troubleshooting:** [FAQ](faq.md#cli-faq)
 - **For trade-offs and rationale:** [Design Rationale](design.md#design-rationale)

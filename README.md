@@ -49,7 +49,7 @@ class GreetCommand
 bash bin/console greet:hello --name=world --shout
 ```
 
-Docs: https://docs.switon.dev/latest/cli
+Docs: https://github.com/switon-php/cli/blob/main/docs/README.md
 
 ## License
 
