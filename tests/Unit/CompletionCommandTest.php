@@ -34,15 +34,15 @@ class CompletionCommandTest extends TestCase
 
     public function testFormatPathForDisplayRewritesHomePrefixToTilde(): void
     {
-        $this->assertSame('~', $this->command->exposedFormatPathForDisplay('/Users/mark', '/Users/mark'));
-        $this->assertSame('~/work/app', $this->command->exposedFormatPathForDisplay('/Users/mark', '/Users/mark/work/app'));
-        $this->assertSame('/opt/data', $this->command->exposedFormatPathForDisplay('/Users/mark', '/opt/data'));
+        $this->assertSame('~', $this->command->exposedFormatPathForDisplay('/Users/dev', '/Users/dev'));
+        $this->assertSame('~/work/app', $this->command->exposedFormatPathForDisplay('/Users/dev', '/Users/dev/work/app'));
+        $this->assertSame('/opt/data', $this->command->exposedFormatPathForDisplay('/Users/dev', '/opt/data'));
     }
 
     public function testFormatPathForDisplayHandlesEmptyPathAndMissingHome(): void
     {
-        $this->assertSame('', $this->command->exposedFormatPathForDisplay('/Users/mark', ''));
-        $this->assertSame('/Users/mark/work/app', $this->command->exposedFormatPathForDisplay('', '/Users/mark/work/app'));
+        $this->assertSame('', $this->command->exposedFormatPathForDisplay('/Users/dev', ''));
+        $this->assertSame('/Users/dev/work/app', $this->command->exposedFormatPathForDisplay('', '/Users/dev/work/app'));
     }
 
     public function testGetVisibleCommandClassReturnsNullForMissingOrHiddenCommands(): void
