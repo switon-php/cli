@@ -29,6 +29,7 @@
         "switon/command": "^1.0",
         "switon/console": "^1.0",
         "switon/core": "^1.0",
+        "switon/di": "^1.0",
         "switon/event": "^1.0",
         "switon/invoker": "^1.0",
         "switon/kernel": "^1.0",
