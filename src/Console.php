@@ -15,9 +15,11 @@ use Switon\Console\AnsiWidthCalculator;
 use Switon\Console\Colors;
 use Switon\Core\Attribute\Autowired;
 use Switon\Core\ConsoleInterface;
+use Switon\Core\Program;
 use Switon\Core\Strings;
 use Throwable;
 
+use function array_values;
 use function defined;
 use function fgets;
 use function function_exists;
@@ -482,7 +484,7 @@ class Console implements ConsoleInterface
         // Try to use stty for hiding input (Unix/Linux/macOS)
         if (DIRECTORY_SEPARATOR === '/') {
             // Save current stty configuration
-            $sttyModeRaw = $this->runShellCommand('stty -g 2>/dev/null');
+            $sttyModeRaw = $this->stty('-g');
             $sttyMode = is_string($sttyModeRaw) ? trim($sttyModeRaw) : null;
 
             if ($sttyMode === null || $sttyMode === '') {
@@ -494,17 +496,17 @@ class Console implements ConsoleInterface
 
             // Register shutdown function to restore terminal state
             register_shutdown_function(function () use ($sttyMode) {
-                $this->runShellCommand('stty ' . escapeshellarg($sttyMode) . ' 2>/dev/null');
+                $this->stty($sttyMode);
             });
 
-            // Disable echo - stty -echo returns empty string on success
-            $this->runShellCommand('stty -echo 2>/dev/null');
+            // Disable echo. stty -echo returns an empty string on success.
+            $this->stty('-echo');
 
             // Read input
             $input = $this->read();
 
-            // Restore stty configuration (use escapeshellarg to prevent injection)
-            $this->runShellCommand('stty ' . escapeshellarg($sttyMode) . ' 2>/dev/null');
+            // Restore stty configuration. The saved mode is one argument, so it is not a shell string.
+            $this->stty($sttyMode);
 
             // Add newline since input was hidden
             $this->writeLn();
@@ -520,16 +522,15 @@ class Console implements ConsoleInterface
         return $this->read();
     }
 
-    /** Executes a shell command and returns string output when available. */
-    protected function runShellCommand(string $command): ?string
+    /** Run `stty` with `$args` and return its stdout. Null when it does not start or exits non-zero. */
+    protected function stty(string ...$args): ?string
     {
-        try {
-            $output = @shell_exec($command);
-        } catch (Throwable) {
+        $result = Program::run(array_values(['stty', ...$args]));
+        if ($result['code'] !== 0) {
             return null;
         }
 
-        return is_string($output) ? $output : null;
+        return $result['output'];
     }
 
     /**

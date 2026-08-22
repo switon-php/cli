@@ -46,7 +46,7 @@ class ConsoleInteractiveTest extends TestCase
         $c = new TestableInteractiveConsole(['topsecret']);
         $this->injectDeps($c);
         $c->shellOutputs = [
-            'stty -g 2>/dev/null' => '',
+            '-g' => '',
         ];
 
         $value = $c->secret('Password');
@@ -124,8 +124,8 @@ class TestableInteractiveConsole extends Console
         return array_shift($this->inputs) ?? '';
     }
 
-    protected function runShellCommand(string $command): ?string
+    protected function stty(string ...$args): ?string
     {
-        return $this->shellOutputs[$command] ?? null;
+        return $this->shellOutputs[implode(' ', $args)] ?? null;
     }
 }

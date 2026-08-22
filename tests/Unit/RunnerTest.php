@@ -11,7 +11,6 @@ use Switon\Core\App;
 use Switon\Core\Runtime;
 use Switon\Sync\Channel;
 use Switon\Sync\TerminationInterface;
-use Swoole\Coroutine;
 
 class RunnerTest extends TestCase
 {
@@ -35,17 +34,37 @@ class RunnerTest extends TestCase
     {
         $seen = null;
         $cid = 0;
+        $home = sys_get_temp_dir() . '/switon-cli-home-' . uniqid('', true);
+        mkdir($home . '/.switon', 0777, true);
+        file_put_contents($home . '/.switon/llm.yml', "aliases:\n  best: missing\n");
+        $previousHome = getenv('HOME');
+        $previousProfile = getenv('USERPROFILE');
+        putenv('HOME=' . $home);
+        putenv('USERPROFILE=' . $home);
 
         try {
             $result = Runner::run(function (ContainerInterface $container) use (&$seen, &$cid): string {
                 $seen = $container;
-                $cid = Coroutine::getCid();
+                $cid = extension_loaded('swoole') ? \Swoole\Coroutine::getCid() : -1;
                 $container->get(TerminationInterface::class)->register(new Channel(1));
 
                 return 'ok';
             });
         } finally {
             Runtime::setCoroutineEnabled(false);
+            if ($previousHome === false) {
+                putenv('HOME');
+            } else {
+                putenv('HOME=' . $previousHome);
+            }
+            if ($previousProfile === false) {
+                putenv('USERPROFILE');
+            } else {
+                putenv('USERPROFILE=' . $previousProfile);
+            }
+            @unlink($home . '/.switon/llm.yml');
+            @rmdir($home . '/.switon');
+            @rmdir($home);
         }
 
         $this->assertSame('ok', $result);

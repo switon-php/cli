@@ -41,9 +41,9 @@ class ConsoleMoreCoverageTest extends TestCase
     {
         $c = $this->makeHarness(['s3cr3t']);
         $c->shellOutputs = [
-            'stty -g 2>/dev/null' => 'saved-mode',
-            'stty -echo 2>/dev/null' => '',
-            'stty ' . escapeshellarg('saved-mode') . ' 2>/dev/null' => '',
+            '-g' => 'saved-mode',
+            '-echo' => '',
+            'saved-mode' => '',
         ];
 
         ob_start();
@@ -232,9 +232,9 @@ class RealConsoleHarness extends Console
         return array_shift($this->inputs) ?? '';
     }
 
-    protected function runShellCommand(string $command): ?string
+    protected function stty(string ...$args): ?string
     {
-        return $this->shellOutputs[$command] ?? '';
+        return $this->shellOutputs[implode(' ', $args)] ?? '';
     }
 
     /**
