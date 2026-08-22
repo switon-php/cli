@@ -727,6 +727,15 @@ class ConsoleTest extends TestCase
         // Assert
         $this->assertStringContainsString($message, $output);
     }
+
+    public function testColorizeEmitsAnsiWhenTheTerminalSupportsColor(): void
+    {
+        $console = new TestableConsole([], true, true);
+
+        $colored = $console->colorize('Hi', Colors::FC_RED | Colors::AT_BOLD, 4);
+
+        $this->assertSame("\033[31m\033[1mHi\033[0m  ", $colored);
+    }
 }
 
 class TestableConsole extends Console
