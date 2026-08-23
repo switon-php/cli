@@ -34,6 +34,7 @@
         "switon/event": "^1.0",
         "switon/invoker": "^1.0",
         "switon/kernel": "^1.0",
+        "switon/log": "^1.0",
         "switon/sync": "^1.0"
     },
     "require-dev": {
