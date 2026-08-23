@@ -34,7 +34,7 @@ One class is one command family; public `*Action()` methods are the runnable ent
 
 - **Routing:** `command` or `command:action`. Empty argv and `--help` go to `list`. `command --help` and `command:action --help` go to `help`.
 - **Discovery:** application code uses path mappings (`App\Command\*Command`, `App\Areas\*\Command\*Command`); package code uses `extra.switon.commands` in `composer.json`.
-- **Binding:** named options bind first, then remaining positional values fill in declaration order.
+- **Binding:** named options bind first, then remaining positional values fill in declaration order. Bare `--` is peeled first into trailing operands for the last unbound `array` parameter.
 
 That keeps the public invocation contract small while leaving room for normal DI inside the command class.
 

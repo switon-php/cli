@@ -13,14 +13,25 @@ use Switon\Core\Attributes;
 use Switon\Core\Json;
 use Switon\Core\Naming;
 
+use function array_key_exists;
+use function array_merge;
+use function array_search;
 use function array_shift;
+use function array_slice;
+use function array_values;
+use function count;
 use function explode;
 use function implode;
+use function in_array;
+use function is_array;
+use function is_bool;
+use function json_decode;
 use function ltrim;
 use function str_contains;
 use function str_split;
 use function str_starts_with;
 use function strlen;
+use function strtolower;
 use function strtr;
 use function substr;
 
@@ -28,7 +39,9 @@ use function substr;
  * Parses CLI argv into normalized options and positional arguments.
  *
  * Supports long options, short options, combined flags, <code>--key=value</code>,
- * and positional arguments.
+ * and positional arguments. A bare <code>--</code> is peeled off first: everything
+ * after it is {@see getTrailing()}; only the left side is option-parsed into
+ * named options and {@see getPositional()}.
  *
  * @see \Switon\Cli\OptionsInterface
  * @see \Switon\Cli\Handler
@@ -44,6 +57,8 @@ class Options implements OptionsInterface, JsonSerializable, Stringable
     protected array $options = [];
     /** @var list<string> */
     protected array $positional = [];
+    /** @var list<string>|null */
+    protected ?array $trailing = null;
     /** @var array<string, string> short => long */
     protected array $aliases = [];
 
@@ -53,6 +68,15 @@ class Options implements OptionsInterface, JsonSerializable, Stringable
         $this->argv = $argv;
         $this->options = [];
         $this->positional = [];
+        $this->trailing = null;
+
+        $separator = array_search('--', $argv, true);
+        if ($separator !== false) {
+            /** @var list<string> $after */
+            $after = array_values(array_slice($argv, (int) $separator + 1));
+            $this->trailing = $after;
+            $argv = array_slice($argv, 0, (int) $separator);
+        }
 
         while ($argv !== []) {
             if (!str_starts_with($argv[0], '-')) {
@@ -68,13 +92,7 @@ class Options implements OptionsInterface, JsonSerializable, Stringable
                 continue;
             }
 
-            if ($option === '--') {
-                // Everything after -- is positional
-                while ($argv !== []) {
-                    $this->positional[] = array_shift($argv);
-                }
-                break;
-            } elseif (str_starts_with($option, '--') || strlen($option) === 2) {
+            if (str_starts_with($option, '--') || strlen($option) === 2) {
                 $name = ltrim($option, '-');
 
                 // --no-xxx negation: store as xxx = false
@@ -98,8 +116,12 @@ class Options implements OptionsInterface, JsonSerializable, Stringable
             }
         }
 
-        if ($this->positional !== []) {
-            $this->options[''] = implode(' ', $this->positional);
+        $operands = $this->positional;
+        if ($this->trailing !== null) {
+            $operands = array_merge($operands, $this->trailing);
+        }
+        if ($operands !== []) {
+            $this->options[''] = implode(' ', $operands);
         }
 
         return $this->options;
@@ -165,6 +187,12 @@ class Options implements OptionsInterface, JsonSerializable, Stringable
     public function getPositional(): array
     {
         return $this->positional;
+    }
+
+    /** {@inheritDoc} */
+    public function getTrailing(): ?array
+    {
+        return $this->trailing;
     }
 
     /** Stores option value and merges repeated values. */

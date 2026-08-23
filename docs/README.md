@@ -5,7 +5,7 @@
 
 - **Plain command classes:** one `*Command` class is one command family; public `*Action()` methods are runnable entries.
 - **Stable invocation shape:** run `command` or `command:action`, with `command --help` and bare `--help` routed to built-ins.
-- **Parameter binding:** action parameters bind from named options first, then from positional values in declaration order.
+- **Parameter binding:** action parameters bind from named options first, then from positional values in declaration order. Bare `--` peels a trailing operand list for the last unbound `array` parameter.
 - **Built-in commands:** `list`, `help`, and `completion:install` ship with the package; no generated catalog is needed.
 - **Visibility metadata:** `Switon\Command\Attribute\Hidden` keeps support actions out of `list` while still runnable.
 - **AI/tooling metadata:** `Switon\Command\Attribute\Tool` attaches a stable description for tool registries.
@@ -109,6 +109,22 @@ class UserCommand
 bash bin/console user:create --email=john@example.com --name=John
 bash bin/console user:create john@example.com John
 bash bin/console user:create --role=admin john@example.com John
+```
+
+A bare `--` is peeled before option parsing. Tokens after it become trailing operands (`OptionsInterface::getTrailing()`). The last unbound `array` parameter receives that list; optional scalars before it do not consume those tokens. Without `--`, a trailing `array` still takes the remaining positionals as before.
+
+```php
+class McpClientCommand
+{
+    public function addAction(string $server, bool $force = false, string $url = '', array $command = []): void
+    {
+    }
+}
+```
+
+```bash
+bash bin/console mcp-client:add app --force -- npx -y tool
+bash bin/console mcp-client:add docs --url=https://example.com/mcp
 ```
 
 Use `Switon\Command\Attribute\ShortOption` to disambiguate when two parameters would collide on the same first-letter alias.

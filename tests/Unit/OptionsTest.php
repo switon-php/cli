@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Switon\Cli\Tests\Unit;
 
-use Switon\Cli\Options;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 use ReflectionParameter;
+use Switon\Cli\Options;
 
 /**
  * Test cases for Options class.
@@ -80,9 +81,10 @@ class OptionsTest extends TestCase
         // Act
         $result = $this->options->parse($argv);
 
-        // Assert - named option parsed, remaining go to positional
+        // Assert - named option parsed; after -- goes to trailing
         $this->assertSame('John', $result['name']);
-        $this->assertSame(['arg1', 'arg2'], $this->options->getPositional());
+        $this->assertSame([], $this->options->getPositional());
+        $this->assertSame(['arg1', 'arg2'], $this->options->getTrailing());
     }
 
     public function testParseFlagOption(): void
@@ -612,14 +614,15 @@ class OptionsTest extends TestCase
 
     public function testGetPositionalWithDoubleDashTerminator(): void
     {
-        // Arrange - everything after -- is positional
+        // Arrange - everything after -- is trailing, not positional
         $argv = ['--', 'a', 'b'];
 
         // Act
         $this->options->parse($argv);
 
         // Assert
-        $this->assertSame(['a', 'b'], $this->options->getPositional());
+        $this->assertSame([], $this->options->getPositional());
+        $this->assertSame(['a', 'b'], $this->options->getTrailing());
     }
 
     public function testGetPositionalWithNamedThenDoubleDash(): void
@@ -632,7 +635,33 @@ class OptionsTest extends TestCase
 
         // Assert
         $this->assertSame('John', $result['name']);
-        $this->assertSame(['--looks-like-option', 'arg'], $this->options->getPositional());
+        $this->assertSame([], $this->options->getPositional());
+        $this->assertSame(['--looks-like-option', 'arg'], $this->options->getTrailing());
+    }
+
+    public function testTrailingNullWhenDoubleDashAbsent(): void
+    {
+        $this->options->parse(['app', '--force']);
+
+        $this->assertSame(['app'], $this->options->getPositional());
+        $this->assertNull($this->options->getTrailing());
+    }
+
+    public function testTrailingEmptyWhenDoubleDashAlone(): void
+    {
+        $this->options->parse(['app', '--']);
+
+        $this->assertSame(['app'], $this->options->getPositional());
+        $this->assertSame([], $this->options->getTrailing());
+    }
+
+    public function testPositionalBeforeDoubleDashStaysPositional(): void
+    {
+        $this->options->parse(['app', '--force', '--', 'npx', '-y', 'tool']);
+
+        $this->assertSame(['app'], $this->options->getPositional());
+        $this->assertTrue($this->options->get('force'));
+        $this->assertSame(['npx', '-y', 'tool'], $this->options->getTrailing());
     }
 
     public function testGetPositionalReturnsEmptyWhenNoPositional(): void
@@ -737,6 +766,7 @@ class OptionsTest extends TestCase
         // Assert
         $this->assertSame('John', $result['name']);
         $this->assertSame([], $this->options->getPositional());
+        $this->assertSame([], $this->options->getTrailing());
     }
 
     public function testDoubleDashOnly(): void
@@ -748,8 +778,133 @@ class OptionsTest extends TestCase
         $result = $this->options->parse($argv);
 
         // Assert
-        $this->assertEmpty($result);
         $this->assertSame([], $this->options->getPositional());
+        $this->assertSame([], $this->options->getTrailing());
+        $this->assertNull($this->options->get(''));
+    }
+
+    /**
+     * @param list<string> $argv
+     * @param array<string, mixed> $named
+     * @param list<string> $positional
+     * @param list<string>|null $trailing
+     */
+    #[DataProvider('doubleDashMatrixProvider')]
+    public function testDoubleDashMatrix(
+        array $argv,
+        array $named,
+        array $positional,
+        ?array $trailing,
+        ?string $operands,
+    ): void {
+        $result = $this->options->parse($argv);
+
+        foreach ($named as $key => $value) {
+            $this->assertSame($value, $result[$key] ?? null, 'named option ' . $key);
+        }
+        $this->assertSame($positional, $this->options->getPositional());
+        $this->assertSame($trailing, $this->options->getTrailing());
+        $this->assertSame($operands, $this->options->get(''));
+    }
+
+    /**
+     * @return iterable<string, array{
+     *   0: list<string>,
+     *   1: array<string, mixed>,
+     *   2: list<string>,
+     *   3: list<string>|null,
+     *   4: string|null
+     * }>
+     */
+    public static function doubleDashMatrixProvider(): iterable
+    {
+        yield 'no separator keeps trailing null' => [
+            ['app', '--force'],
+            ['force' => true],
+            ['app'],
+            null,
+            'app',
+        ];
+        yield 'separator alone yields empty trailing' => [
+            ['app', '--'],
+            [],
+            ['app'],
+            [],
+            'app',
+        ];
+        yield 'command after separator' => [
+            ['app', '--', 'npx', '-y', 'tool'],
+            [],
+            ['app'],
+            ['npx', '-y', 'tool'],
+            'app npx -y tool',
+        ];
+        yield 'named flag before separator does not steal command' => [
+            ['app', '--force', '--', 'npx', '-y', 'tool'],
+            ['force' => true],
+            ['app'],
+            ['npx', '-y', 'tool'],
+            'app npx -y tool',
+        ];
+        yield 'equals option before separator' => [
+            ['docs', '--url=https://example.com/mcp', '--', 'ignored'],
+            ['url' => 'https://example.com/mcp'],
+            ['docs'],
+            ['ignored'],
+            'docs ignored',
+        ];
+        yield 'option-like tokens after separator stay trailing' => [
+            ['pos', '--', '--force', '-v', '--url=x'],
+            [],
+            ['pos'],
+            ['--force', '-v', '--url=x'],
+            'pos --force -v --url=x',
+        ];
+        yield 'second separator is a trailing literal' => [
+            ['app', '--', '--', 'npx'],
+            [],
+            ['app'],
+            ['--', 'npx'],
+            'app -- npx',
+        ];
+        yield 'leading separator puts everything in trailing' => [
+            ['--', '-x', '--foo', 'bar'],
+            [],
+            [],
+            ['-x', '--foo', 'bar'],
+            '-x --foo bar',
+        ];
+        yield 'only left-side positionals when separator present' => [
+            ['a', 'b', '--verbose', '--', 'c', 'd'],
+            ['verbose' => true],
+            ['a', 'b'],
+            ['c', 'd'],
+            'a b c d',
+        ];
+        yield 'value option then separator' => [
+            ['--name', 'John', 'pos', '--', 'rest'],
+            ['name' => 'John'],
+            ['pos'],
+            ['rest'],
+            'pos rest',
+        ];
+        yield 'parse resets trailing on second parse without separator' => [
+            ['only'],
+            [],
+            ['only'],
+            null,
+            'only',
+        ];
+    }
+
+    public function testParseResetsTrailingWhenSecondArgvOmitsSeparator(): void
+    {
+        $this->options->parse(['app', '--', 'npx']);
+        $this->assertSame(['npx'], $this->options->getTrailing());
+
+        $this->options->parse(['other']);
+        $this->assertSame(['other'], $this->options->getPositional());
+        $this->assertNull($this->options->getTrailing());
     }
 
     public function testParseResetsStateOnSecondCall(): void
@@ -790,17 +945,18 @@ class OptionsTest extends TestCase
         $this->assertSame(['pos1', 'pos2'], $this->options->getPositional());
     }
 
-    public function testDoubleDashMakesOptionLikeArgsPositional(): void
+    public function testDoubleDashMakesOptionLikeArgsTrailing(): void
     {
-        // Arrange - after --, even -x and --foo become positional
+        // Arrange - after --, even -x and --foo become trailing (not parsed as options)
         $argv = ['--', '-x', '--foo', 'bar'];
 
         // Act
-        $result = $this->options->parse($argv);
+        $this->options->parse($argv);
 
         // Assert
         $this->assertSame('-x --foo bar', $this->options->get(''));
-        $this->assertSame(['-x', '--foo', 'bar'], $this->options->getPositional());
+        $this->assertSame([], $this->options->getPositional());
+        $this->assertSame(['-x', '--foo', 'bar'], $this->options->getTrailing());
     }
 
     public function testPositionalWithEmptyString(): void
@@ -826,7 +982,9 @@ class OptionsTest extends TestCase
         // Assert
         $this->assertSame('John', $result['name']);
         $this->assertTrue($result['v']);
-        $this->assertSame(['pos1', '--not-option', 'pos2'], $this->options->getPositional());
+        $this->assertSame(['pos1'], $this->options->getPositional());
+        $this->assertSame(['--not-option', 'pos2'], $this->options->getTrailing());
+        $this->assertSame('pos1 --not-option pos2', $this->options->get(''));
     }
 
     // ========================================================================

@@ -15,7 +15,7 @@ Add `defaultAction()` to the command class. The bare `command` invocation routes
 
 ### How do options reach my action? {#options-into-action}
 
-Named options bind first, then positional values fill the rest in declaration order. See [Parameter binding](README.md#parameter-binding).
+Named options bind first, then positional values fill the rest in declaration order. A bare `--` peels trailing operands for the last unbound `array` parameter so optional flags do not steal them. See [Parameter binding](README.md#parameter-binding).
 
 ### Can I hide a support command? {#hide-command}
 

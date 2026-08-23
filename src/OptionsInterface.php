@@ -12,19 +12,21 @@ use Switon\Core\PositionalInputInterface;
  * Contract for CLI option parsing and typed option access.
  *
  * Parse once with <code>parse()</code>, then read values through
- * <code>get*</code> helpers and <code>getPositional()</code>.
+ * <code>get*</code> helpers, <code>getPositional()</code>, and <code>getTrailing()</code>.
  *
  * Guidance: For application commands, prefer Invoker argument binding; use `--name=value` for values that begin with `-`.
+ * Put a bare <code>--</code> before a passthrough command line so the binder can fill a trailing <code>array</code> parameter without optional flags stealing those tokens.
  *
  * Road-signs:
- * - parse() normalizes argv once
+ * - parse() peels bare <code>--</code> first, then normalizes the left side
  * - normalized storage uses long option keys
- * - positional args stay available for argument binding
+ * - positional (before <code>--</code>) and trailing (after <code>--</code>) stay available for argument binding
  * - normalize() returns short-to-long alias map
  *
  * @see \Switon\Cli\Options
  * @see \Switon\Cli\Options::parse()
  * @see \Switon\Cli\Options::getPositional()
+ * @see \Switon\Cli\Options::getTrailing()
  * @see \Switon\Cli\Handler
  * @see \Switon\Invoking\InvokerInterface::invoke()
  * @see \Switon\Binding\ArgumentsBinderInterface::resolve()
@@ -65,11 +67,18 @@ interface OptionsInterface extends InputInterface, PositionalInputInterface
     public function getArray(string $name, array $default = []): array;
 
     /**
-     * Returns positional (non-option) arguments.
+     * Returns positional operands before <code>--</code> (or all bare operands when <code>--</code> is absent).
      *
      * @return list<string>
      */
     public function getPositional(): array;
+
+    /**
+     * Returns operands after <code>--</code>, or <code>null</code> when <code>--</code> was not present.
+     *
+     * @return list<string>|null
+     */
+    public function getTrailing(): ?array;
 
     /**
      * Normalizes parsed options for an action's scalar parameters.
