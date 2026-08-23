@@ -28,6 +28,7 @@
         "switon/binding": "^1.0",
         "switon/command": "^1.0",
         "switon/console": "^1.0",
+        "switon/context": "^1.0",
         "switon/core": "^1.0",
         "switon/di": "^1.0",
         "switon/event": "^1.0",
