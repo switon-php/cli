@@ -34,11 +34,11 @@
         "switon/event": "^1.0",
         "switon/invoker": "^1.0",
         "switon/kernel": "^1.0",
-        "switon/log": "^1.0",
         "switon/sync": "^1.0"
     },
     "require-dev": {
         "phpstan/phpstan": "^2.0",
+        "switon/log": "^1.0",
         "switon/testing": "^1.0",
         "phpstan/extension-installer": "^1.4"
     },
